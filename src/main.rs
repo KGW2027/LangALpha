@@ -1,3 +1,8 @@
+mod file {
+    pub mod file_reader;
+}
+
 fn main() {
-    println!("Hello, world!");
+    let test = file::file_reader::get_name();
+    println!("{} and {}", test, test);
 }
