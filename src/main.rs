@@ -1,8 +1,8 @@
 mod file {
-    pub mod file_reader;
+    pub mod file_selector;
 }
 
 fn main() {
-    let test = file::file_reader::get_name();
-    println!("{} and {}", test, test);
+    let test = file::file_selector::select_file();
+    println!("Selected : {}", test);
 }
