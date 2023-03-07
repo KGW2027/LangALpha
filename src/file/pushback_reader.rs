@@ -17,59 +17,47 @@ impl<R: Read> PushbackReader<R> {
         self.pushed.push(byte);
     }
 
-    pub fn peek(&mut self, mut len: u8) -> Result<String, Exception> {
+    pub fn peek(&mut self, mut len: u8) -> Result<Vec<u8>, Exception> {
 
         let mut peeked: Vec<u8> = Vec::new();
-        let mut str: String = String::new();
         let mut buffer = [0u8; 1];
-
         let mut exception: Option<Exception> = None;
 
         while len > 0 {
             len = len - 1;
 
             match self.read(&mut buffer) {
-                Err(Error) => {
+                Err(_) => {
                     exception = Some(Exception::new(ExceptionType::AssertionFailed, "PushbackReader try to read unknown pointer.".to_string()));
+                    break;
                 },
                 Ok(read_length) => {
                     if read_length == 0 {
                         exception = Some(Exception::new(ExceptionType::EOFException, "PushbackReader peeked EOF.".to_string()));
+                        break;
                     }
                 }
             }
-            if exception.is_some() {
-                break;
-            }
 
-            let read = buffer[0];
-            peeked.push(read);
-            str.push(read as char);
+            peeked.push(buffer[0]);
         }
 
-        while peeked.len() > 0 {
-            self.pushed.push(peeked.pop().unwrap());
+        let return_value = peeked.clone();
+        while !peeked.is_empty() {
+            self.pushed.push(peeked.remove(peeked.len() - 1));
         }
 
-        if exception.is_none() {
-            return Ok(str);
-        }
-        Err(exception.unwrap())
+        exception.map(Err).unwrap_or(Ok(return_value))
     }
 }
 
 impl<R: Read> Read for PushbackReader<R> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if self.pushed.len() > 0{
-            buf[0] = self.pushed.pop().unwrap();
+        if let Some(byte) = self.pushed.pop() {
+            buf[0] = byte;
             self.inner.read(&mut buf[1..]).map(|n| n + 1)
         } else {
-            match self.inner.read(buf) {
-                Ok(0) => Ok(0),
-                other => {
-                    Ok(other.unwrap())
-                },
-            }
+            self.inner.read(buf)
         }
     }
 }
