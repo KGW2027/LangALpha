@@ -15,10 +15,7 @@ impl<R: Read> PushbackReader<R> {
         }
     }
 
-    pub fn unread(&mut self, byte: u8) {
-        self.pushed.push(byte);
-    }
-
+    // len 길이만큼 확인한다.
     pub fn peek(&mut self, mut len: u8) -> Vec<u8> {
 
         let mut peeked: Vec<u8> = Vec::new();
@@ -50,6 +47,27 @@ impl<R: Read> PushbackReader<R> {
         }
 
         return_value
+    }
+
+    // 포인터를 증가시키고, 캐시를 지운다.
+    pub fn clean(&mut self) {
+        self.ptr = self.ptr + self.pushed.len() as u64;
+        self.pushed.clear();
+    }
+
+    // 줄넘김 밑 공백 스킵
+    pub fn skip_line(&mut self) {
+        self.clean();
+        let mut peek = self.peek(1)[0];
+        while peek <= 32 {
+            self.clean();
+            peek = self.peek(1)[0];
+        }
+    }
+
+    // 포인터값 반환
+    pub fn get_ptr(&mut self) -> u64 {
+        self.ptr
     }
 }
 

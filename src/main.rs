@@ -10,6 +10,7 @@ mod file {
 mod machine {
     pub mod controller;
     pub mod exception;
+    pub mod lexer;
 }
 
 fn main() {
