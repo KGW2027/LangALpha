@@ -1,15 +1,17 @@
 use std::io::{self, Read};
+use crate::machine::exception;
 use crate::machine::exception::{Exception, ExceptionType};
 
 pub struct PushbackReader<R> {
     inner: R,
-    pushed: Vec<u8>
+    pushed: Vec<u8>,
+    ptr: u64
 }
 
 impl<R: Read> PushbackReader<R> {
     pub fn new(inner: R) -> PushbackReader<R> {
         PushbackReader {
-            inner, pushed: Vec::new()
+            inner, pushed: Vec::new(), ptr: 0
         }
     }
 
@@ -17,28 +19,28 @@ impl<R: Read> PushbackReader<R> {
         self.pushed.push(byte);
     }
 
-    pub fn peek(&mut self, mut len: u8) -> Result<Vec<u8>, Exception> {
+    pub fn peek(&mut self, mut len: u8) -> Vec<u8> {
 
         let mut peeked: Vec<u8> = Vec::new();
         let mut buffer = [0u8; 1];
-        let mut exception: Option<Exception> = None;
 
         while len > 0 {
             len = len - 1;
 
             match self.read(&mut buffer) {
                 Err(_) => {
-                    exception = Some(Exception::new(ExceptionType::AssertionFailed, "PushbackReader try to read unknown pointer.".to_string()));
+                    exception::throw_exception(Exception::new(ExceptionType::AssertionFailed, "PushbackReader try to read unknown pointer.".to_string()), self.ptr);
                     break;
                 },
                 Ok(read_length) => {
                     if read_length == 0 {
-                        exception = Some(Exception::new(ExceptionType::EOFException, "PushbackReader peeked EOF.".to_string()));
+                        exception::throw_exception(Exception::new(ExceptionType::EOFException, "PushbackReader peeked EOF.".to_string()), self.ptr);
                         break;
                     }
                 }
             }
 
+            // println!("byte read : {} -> {}", buffer[0], buffer[0] as char);
             peeked.push(buffer[0]);
         }
 
@@ -47,7 +49,7 @@ impl<R: Read> PushbackReader<R> {
             self.pushed.push(peeked.remove(peeked.len() - 1));
         }
 
-        exception.map(Err).unwrap_or(Ok(return_value))
+        return_value
     }
 }
 

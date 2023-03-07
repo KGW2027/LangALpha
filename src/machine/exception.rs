@@ -1,3 +1,4 @@
+use std::process;
 
 pub enum ExceptionType {
     EOFException,
@@ -20,4 +21,9 @@ impl Exception {
     pub fn get_message(&self) -> String {
         self.message.clone()
     }
+}
+
+pub fn throw_exception(ex: Exception, ptr: u64) {
+    println!("Error : {} on {}", ex.get_message(), ptr);
+    process::exit(1);
 }
